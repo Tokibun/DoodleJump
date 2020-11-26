@@ -43,14 +43,14 @@
 	displayAddress:	.word	0x10008000
 	
 	#Platform Positions
-	platAh: .word 0
-	platAv: .word 4
-	platBh: .word 8
-	platBv: .word 8
-	platCh: .word 16
-	platCv: .word 16
-	platDh: .word 24
-	platDv: .word 24
+	pAx: .word 0
+	pAy: .word 4
+	pBx: .word 8
+	pBy: .word 8
+	pCx: .word 16
+	pCy: .word 16
+	pDx: .word 24
+	pDy: .word 24
 	#Platform Characteristic
 	platLength: .word 8
 	
@@ -59,6 +59,7 @@
 	platColor: .word 0x0000ff #Blue
 	
 .text	
+
 
 
 #Painting the background of the screen (all pixels)
@@ -81,13 +82,13 @@ PaintPlatforms:
 	#Painting platform A
 	lw $t0, platLength
 	lw $t1, platColor
-	lw $t2, platAh
-	lw $t3, platAv
-	#Multiply platAv (vertical pos) by 128
+	lw $t2, pAx
+	lw $t3, pAy
+	#Multiply pAy (vertical pos) by 128
 	sll $t4, $t3, 7 
-	#Mutiply platAh (horizontal pos) by 4
+	#Mutiply pAx (horizontal pos) by 4
 	sll $t5, $t2, 2
-	# 128(platAv) + 4(platAh)
+	# 128(pAy) + 4(pAx)
 	add $t6, $t5, $t4
 	#Calculated offset + display start
 	lw $t7, displayAddress
@@ -104,8 +105,10 @@ PaintPlatforms:
 		j PaintPlatA
 	DonePlatA:
 	
-	
-	
+
+#Generate leftmost h position for a platform (0-24)
+ 
+
 	
 Exit:
 	li $v0, 10 # terminate the program gracefully
