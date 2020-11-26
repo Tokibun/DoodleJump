@@ -36,7 +36,7 @@
 # Pixel address offsets range from 0 - 4092
 # Platform length is 8
 
-# Platform horizontal position range offset 0-92
+# Platform horizontal position range offset 0-96 [generate value from 0-24] Then multiply by 4
 
 .data
 	#Display Address
@@ -46,11 +46,11 @@
 	platAh: .word 0
 	platAv: .word 4
 	platBh: .word 8
-	platBv: .word 44
+	platBv: .word 8
 	platCh: .word 16
-	platCv: .word 92
+	platCv: .word 16
 	platDh: .word 24
-	platDv: .word 0
+	platDv: .word 24
 	#Platform Characteristic
 	platLength: .word 8
 	
@@ -59,7 +59,7 @@
 	platColor: .word 0x0000ff #Blue
 	
 .text	
-	
+
 
 #Painting the background of the screen (all pixels)
 PaintScreen:
