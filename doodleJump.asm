@@ -39,6 +39,7 @@
 # Platform horizontal position range offset 0-96 [generate value from 0-24] Then multiply by 4
 
 .data
+	
 	#Display Address
 	displayAddress:	.word	0x10008000
 	
@@ -59,7 +60,12 @@
 	platColor: .word 0x0000ff #Blue
 	
 .text	
-
+	#RandomlyGenerate platform A's position
+GeneratePlatA:
+	jal GeneratePlatformPosition
+	sw $a0, pAx
+	#RandomlyGenerate platform B's position
+	#RandomlyGenerate platform C's position
 
 
 #Painting the background of the screen (all pixels)
@@ -104,12 +110,20 @@ PaintPlatforms:
 		addi $t6, $t6, 4 
 		j PaintPlatA
 	DonePlatA:
-	
 
-#Generate leftmost h position for a platform (0-24)
- 
-
-	
 Exit:
 	li $v0, 10 # terminate the program gracefully
+	syscall	
+
+#Generate leftmost h position for a platform (0-24)
+GeneratePlatformPosition:
+	li $v0, 42
+	li $a0, 0
+	li $a1, 24
 	syscall
+	jr $ra
+
+
+
+	
+
