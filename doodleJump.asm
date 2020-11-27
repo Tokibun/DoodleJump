@@ -60,9 +60,6 @@
 	playerColor: .word 0x5CFFBE #Green
 	
 	
-	promptA: .asciiz "\n\n INDEX:"
-	promptB: .asciiz "\n Iteration:"
-	
 .text	
 
 Start:
