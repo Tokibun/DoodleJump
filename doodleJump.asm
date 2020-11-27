@@ -44,14 +44,7 @@
 	displayAddress:	.word	0x10008000
 	
 	#Platform Positions
-	pAx: .word 0
-	pAy: .word 4
-	pBx: .word 8
-	pBy: .word 8
-	pCx: .word 16
-	pCy: .word 16
-	pDx: .word 24
-	pDy: .word 24
+	platOffset: .word 0, 896, 1920, 2944, 3968
 	#Platform Characteristic
 	platLength: .word 8
 	
@@ -59,11 +52,12 @@
 	skyColor: .word 0x00ffe5 #Cyan
 	platColor: .word 0x0000ff #Blue
 	
+	
+	promptA: .asciiz "\n\n INDEX:"
+	promptB: .asciiz "\n Iteration:"
+	
 .text	
 	#RandomlyGenerate platform A's position
-GeneratePlatA:
-	jal GeneratePlatformPosition
-	sw $a0, pAx
 	#RandomlyGenerate platform B's position
 	#RandomlyGenerate platform C's position
 
@@ -85,31 +79,36 @@ CheckPlatforms:
 
 #Draw platforms on screen based on horizontal and vertical position, and their set length
 PaintPlatforms:
-	#Painting platform A
 	lw $t0, platLength
 	lw $t1, platColor
-	lw $t2, pAx
-	lw $t3, pAy
-	#Multiply pAy (vertical pos) by 128
-	sll $t4, $t3, 7 
-	#Mutiply pAx (horizontal pos) by 4
-	sll $t5, $t2, 2
-	# 128(pAy) + 4(pAx)
-	add $t6, $t5, $t4
-	#Calculated offset + display start
-	lw $t7, displayAddress
-	add $t6, $t7, $t6
-	#Counter to paint platA
-	li $t9, 0
-	PaintPlatA:
-		beq $t9, $t0, DonePlatA
-		sw $t1, 0($t6)
-		#Increment loop counter
-		addi $t9, $t9, 1
-		#Increment pixel for platform
-		addi $t6, $t6, 4 
-		j PaintPlatA
-	DonePlatA:
+	#Display Start
+	lw $t2, displayAddress
+	#Get address of plaform array
+	la $t3, platOffset
+	#Index of platform array * 4
+	li $t4, 0
+	PlatformsLoop:
+		#Get address of array at certain index
+		add $t5, $t3, $t4
+		#Access certain element of platOffset array
+		lw $t6, 0($t5)	
+		#Add offset to displayAddress
+		add $t6, $t6, $t2
+		#Counter to paint a platform to full length
+		li $t9, 0
+		PaintPlatA:
+			beq $t9, $t0, DonePlatA
+			#Draw platform		
+			sw $t1, 0($t6)
+			#Increment loop counter
+			addi $t9, $t9, 1
+			#Increment adress for next pixel of platform
+			addi $t6, $t6, 4			
+			j PaintPlatA
+		DonePlatA:
+			addi $t4, $t4, 4
+			#Maximum index of platform array = #platform*4 - 4
+			bne $t4, 20, PlatformsLoop
 
 Exit:
 	li $v0, 10 # terminate the program gracefully
