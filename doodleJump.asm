@@ -34,9 +34,12 @@
 ##########
 # Display Notes
 # Pixel address offsets range from 0 - 4092
-# Platform length is 8
-
 # Platform horizontal position range offset 0-96 [generate value from 0-24] Then multiply by 4
+# Platform offset positions are based of leftmost point of platform
+
+# Player offset position is bottom left of character
+
+
 
 .data
 	
@@ -48,18 +51,47 @@
 	#Platform Characteristic
 	platLength: .word 8
 	
+	#Player Position
+	playerOffset: .word 4028
+	
 	#Game colors
-	skyColor: .word 0x00ffe5 #Cyan
-	platColor: .word 0x0000ff #Blue
+	skyColor: .word 0xDDFFFB #LightBlue-NearWhite
+	platColor: .word 0xFFACF6 #Pink
+	playerColor: .word 0x5CFFBE #Green
 	
 	
 	promptA: .asciiz "\n\n INDEX:"
 	promptB: .asciiz "\n Iteration:"
 	
 .text	
-	#RandomlyGenerate platform A's position
-	#RandomlyGenerate platform B's position
-	#RandomlyGenerate platform C's position
+
+Start:
+	#RandomlyGenerate all platform's positions (At the beginning of game)
+	#Go through all the platforms
+	#Get address of plaform array
+	la $t1, platOffset
+	#Index of platform array * 4
+	li $t2, 0
+	StartRandomPos:
+		#Generate random horizontal position
+		jal GeneratePlatformPosition
+		#Add offset to array address
+		add $t3, $t2, $t1
+		#Access certain element of platOffset array
+		lw $t4, 0($t3)	
+		#Add to the element by random horizontal  position
+		add $t4, $t4, $a0
+		#Save to the address
+		sw $t4, 0($t3)	
+		
+		addi $t2, $t2, 4
+		#Maximum index of platform array = #platform*4 - 4
+		bne $t2, 20, StartRandomPos
+		
+	
+
+#Check if the platforms are still in display 
+CheckPlatforms:
 
 
 #Painting the background of the screen (all pixels)
@@ -71,11 +103,7 @@ PaintScreen:
 		sw $t1, 0($t0)
 		addi $t0, $t0, 4
 		j PaintPixel
-	DoneScreen:
-
-#Check if the platforms are still in display 
-CheckPlatforms:
-	
+	DoneScreen:	
 
 #Draw platforms on screen based on horizontal and vertical position, and their set length
 PaintPlatforms:
@@ -110,16 +138,27 @@ PaintPlatforms:
 			#Maximum index of platform array = #platform*4 - 4
 			bne $t4, 20, PlatformsLoop
 
+PaintPlayer:
+	lw $t0, displayAddress
+	lw $t1, playerColor
+	lw $t2, playerOffset
+	add $t3, $t2, $t0
+	sw $t1, 0($t3)
+	
+
 Exit:
 	li $v0, 10 # terminate the program gracefully
 	syscall	
 
-#Generate leftmost h position for a platform (0-24)
+#Generate random horizontal position for platform (0-94) offset that is divisible by 4
 GeneratePlatformPosition:
+	#Generate number from 0-24
 	li $v0, 42
 	li $a0, 0
 	li $a1, 24
 	syscall
+	#Multiply number by 4
+	sll $a0, $a0, 2
 	jr $ra
 
 
