@@ -60,6 +60,10 @@
 	playerColor: .word 0x5CFFBE #Green
 	
 	
+	promptK: .asciiz "K entered\n "
+	promptJ: .asciiz "J entered\n "
+	
+	
 .text	
 
 Start:
@@ -87,7 +91,49 @@ Start:
 		
 		
 GameRunning:
+
+#Sleep
+Sleep:
+	li $v0, 32
+	li $a0, 500
+	syscall		
 	
+#Check for UserInput
+KeyPress:
+	lw $t8, 0xffff0000 
+	#Goes out of label if nothing is pressed
+	beq $t8, 0, DoneKeyPress
+	#This point on means something is pressed, check what is pressed
+	lw $t2, 0xffff0004 
+	#Check if j is pressed
+	beq $t2, 0x6a, PressedJ
+	#Check if k is pressed
+	beq $t2, 0x6b, PressedK
+	#Ignore if other key is pressed
+	j DoneKeyPress
+#Update players location if user pressed j
+PressedJ:
+	lw $t0, playerOffset
+	addi $t0, $t0, -4
+	sw $t0, playerOffset
+	
+	li $v0, 4
+	la $a0, promptJ
+	syscall 
+	
+	j DoneKeyPress
+	
+#Update player's location if user pressed k
+PressedK:
+	lw $t0, playerOffset
+	addi $t0, $t0, 4
+	sw $t0, playerOffset
+	
+	li $v0, 4
+	la $a0, promptK
+	syscall 
+	
+DoneKeyPress:
 
 #Check if the platforms are still in display 
 CheckPlatforms:
@@ -157,13 +203,15 @@ PaintPlatforms:
 			addi $t4, $t4, 4
 			#Maximum index of platform array = #platform*4 - 4
 			bne $t4, 20, PlatformsLoop
-
+#Draw player
 PaintPlayer:
 	lw $t0, displayAddress
 	lw $t1, playerColor
 	lw $t2, playerOffset
 	add $t3, $t2, $t0
 	sw $t1, 0($t3)
+	
+j GameRunning
 	
 
 Exit:
@@ -180,6 +228,9 @@ GeneratePlatformPosition:
 	#Multiply number by 4
 	sll $a0, $a0, 2
 	jr $ra
+	
+
+
 
 
 
