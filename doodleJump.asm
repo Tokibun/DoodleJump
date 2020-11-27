@@ -47,7 +47,7 @@
 	displayAddress:	.word	0x10008000
 	
 	#Platform Positions
-	platOffset: .word 0, 896, 1920, 2944, 3968
+	platOffset: .word 128, 896, 1920, 2944, 3968
 	#Platform Characteristic
 	platLength: .word 8
 	
@@ -85,10 +85,33 @@ Start:
 		#Maximum index of platform array = #platform*4 - 4
 		bne $t2, 20, StartRandomPos
 		
+		
+GameRunning:
 	
 
 #Check if the platforms are still in display 
 CheckPlatforms:
+	la $t1, platOffset
+	#Index of platform array * 4
+	li $t2, 0
+	Check:
+		#Add offset to array address
+		add $t3, $t2, $t1
+		#Access certain element of platOffset array
+		lw $t4, 0($t3)	
+		
+		#Check that the platform location is valid (The bottom rightmost position of the left point of platform is 4064)
+		blt $t4, 4068, NextPlatform		
+		
+		NewPlatform:
+			#Generate random horizontal position
+			jal GeneratePlatformPosition
+			#Save to the address (the platform will be at top of display)
+			sw $a0, 0($t3)	
+		NextPlatform:
+			addi $t2, $t2, 4
+			#Maximum index of platform array = #platform*4 - 4
+			bne $t2, 20, Check
 
 
 #Painting the background of the screen (all pixels)
