@@ -39,7 +39,10 @@
 
 # Player offset position is bottom left of character
 
-
+##Other Notes
+# Player's jumps are determined by counter that goes from 1-35. [Increase counter with each tick]
+# Move up Numbers: 1-10, 12, 14, 16
+# Move down Numbers: 20, 22, 24, 26-35
 
 .data
 	
@@ -67,6 +70,9 @@
 .text	
 
 Start:
+	#Set up counter on register to deremine player's jumps based on value (runs from 1-18)
+	li $a3, 0
+
 	#RandomlyGenerate all platform's positions (At the beginning of game)
 	#Go through all the platforms
 	#Get address of plaform array
@@ -92,10 +98,42 @@ Start:
 		
 GameRunning:
 
+	#Increment player's jumps register
+	addi $a3, $a3, 1
+	#Keep counter between 1-35
+	beq $a3, 36, ResetPlayerJumpCounter
+	j DetermminePlayerJump
+	ResetPlayerJumpCounter:
+		li $a3, 1
+	DetermminePlayerJump:
+		#Do not update player position if the counter is at these ticks
+		beq $a3, 11, DoneJump
+		beq $a3, 13, DoneJump
+		beq $a3, 15, DoneJump
+		beq $a3, 17, DoneJump
+		beq $a3, 18, DoneJump
+		beq $a3, 19, DoneJump
+		beq $a3, 21, DoneJump
+		beq $a3, 23, DoneJump
+		beq $a3, 25, DoneJump
+		#If the number is less than 8
+		blt $a3, 17, PlayerJumpUp
+		#Otherwise the player should be falling
+		lw $t0, playerOffset
+		addi $t0, $t0, 128
+		sw $t0, playerOffset
+		j DoneJump
+	PlayerJumpUp:
+		lw $t0, playerOffset
+		addi $t0, $t0, -128
+		sw $t0, playerOffset
+	DoneJump:
+	
+
 #Sleep
 Sleep:
 	li $v0, 32
-	li $a0, 500
+	li $a0, 250
 	syscall		
 	
 #Check for UserInput
@@ -115,12 +153,7 @@ KeyPress:
 PressedJ:
 	lw $t0, playerOffset
 	addi $t0, $t0, -4
-	sw $t0, playerOffset
-	
-	li $v0, 4
-	la $a0, promptJ
-	syscall 
-	
+	sw $t0, playerOffset	
 	j DoneKeyPress
 	
 #Update player's location if user pressed k
@@ -128,10 +161,7 @@ PressedK:
 	lw $t0, playerOffset
 	addi $t0, $t0, 4
 	sw $t0, playerOffset
-	
-	li $v0, 4
-	la $a0, promptK
-	syscall 
+
 	
 DoneKeyPress:
 
