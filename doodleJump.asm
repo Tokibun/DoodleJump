@@ -52,7 +52,7 @@
 	#Platform Positions
 	platOffset: .word 128, 896, 1920, 2944, 4008#3968
 	#Platform Characteristic
-	platLength: .word 8
+	platLength: .word 10
 	
 	#Player Position
 	playerOffset: .word 3900 #4028
@@ -94,13 +94,13 @@ Start:
 	#Basic addresses of platform array that will not change
 	#Get address of plaform array
 	la $t1, platOffset
-	li $t0, 128
+	li $t0, 384#128
 	sw $t0, 0($t1)
-	li $t0, 896
+	li $t0, 1152#896
 	sw $t0, 4($t1)
-	li $t0, 1920
+	li $t0, 2176#1920
 	sw $t0, 8($t1)
-	li $t0, 2944
+	li $t0, 3200#2944
 	sw $t0, 12($t1)
 	li $t0, 4008
 	sw $t0, 16($t1)
@@ -320,12 +320,12 @@ Exit:
 	li $v0, 10 # terminate the program gracefully
 	syscall	
 
-#Generate random horizontal position for platform (0-94) offset that is divisible by 4
+#Generate random horizontal position for platform (0-94) offset that is divisible by 4      
 GeneratePlatformPosition:
-	#Generate number from 0-24
+	#Generate number from 0-24 UPDATE 0-22
 	li $v0, 42
 	li $a0, 0
-	li $a1, 24
+	li $a1, 22
 	syscall
 	#Multiply number by 4
 	sll $a0, $a0, 2
