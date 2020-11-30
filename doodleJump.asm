@@ -70,9 +70,9 @@
 .text	
 
 Start:
-	#Set up counter on register to deremine player's jumps based on value (runs from 1-18)
-	li $a3, 0
-
+	#Counter for how much a player can jump
+	li $a3, 10
+	li $a2, 0
 	#RandomlyGenerate all platform's positions (At the beginning of game)
 	#Go through all the platforms
 	#Get address of plaform array
@@ -97,38 +97,19 @@ Start:
 		
 		
 GameRunning:
-
-	#Increment player's jumps register
-	addi $a3, $a3, 1
-	#Keep counter between 1-35
-	beq $a3, 36, ResetPlayerJumpCounter
-	j DetermminePlayerJump
-	ResetPlayerJumpCounter:
-		li $a3, 1
-	DetermminePlayerJump:
-		#Do not update player position if the counter is at these ticks
-		beq $a3, 11, DoneJump
-		beq $a3, 13, DoneJump
-		beq $a3, 15, DoneJump
-		beq $a3, 17, DoneJump
-		beq $a3, 18, DoneJump
-		beq $a3, 19, DoneJump
-		beq $a3, 21, DoneJump
-		beq $a3, 23, DoneJump
-		beq $a3, 25, DoneJump
-		#If the number is less than 8
-		blt $a3, 17, PlayerJumpUp
-		#Otherwise the player should be falling
-		lw $t0, playerOffset
-		addi $t0, $t0, 128
-		sw $t0, playerOffset
-		#Falling down requires a check for platform collision
-		jal CheckCollision
-		j DoneJump
+	beq $a3, 0, PlayerFallDown
 	PlayerJumpUp:
 		lw $t0, playerOffset
 		addi $t0, $t0, -128
 		sw $t0, playerOffset
+		addi $a3, $a3 -1
+		j DoneJump
+	PlayerFallDown:
+		#Otherwise the player should be falling
+		lw $t0, playerOffset
+		addi $t0, $t0, 128
+		sw $t0, playerOffset
+		jal CheckCollision
 	DoneJump:
 	
 #Move platforms down
@@ -297,7 +278,7 @@ CheckCollision:
 		#Acess element at that index
 		lw $t4, 0($t3)
 		#Move it back by a row
-		addi $t4, $t4, -128
+		#addi $t4, $t4, -128
 		#Counter for platform length
 		li $t5, 0
 		PlatformCollision:
@@ -305,7 +286,7 @@ CheckCollision:
 			#Check if the platform (one above) collides
 			bne $t4, $t0, NotCollide
 			#This means it has collided
-			li $a3, 0 #Reset player jump counter
+			li $a3, 10 #Reset player jump counter
 			#Variable to shift platfoems down by 1
 			li $a2, 1
 			j DoneCheckCollision
