@@ -63,18 +63,52 @@
 	playerColor: .word 0x5CFFBE #Green
 	
 	
-	promptA: .asciiz "Collision\n "
-	promptJ: .asciiz "J entered\n "
-	
 	
 .text	
+
+Launch:
+	#Wait for user to hit s to start
+	lw $t8, 0xffff0000 
+	#Goes out of label if nothing is pressed
+	beq $t8, 0, Wait
+	#This point on means something is pressed, check what is pressed
+	lw $t2, 0xffff0004 
+	#Check if s is pressed
+	bne $t2, 0x73, Wait
+	j Start
+	#Sleep
+	Wait:
+		jal Sleep	
+	j Launch
+	
 
 Start:
 	#Counter for how much a player can jump
 	li $a3, 10
+	#Register to save what platform the screen needs to scroll past
 	li $a2, -1
 	#RandomlyGenerate all platform's positions (At the beginning of game)
 	#Go through all the platforms
+	
+	#INITIAL PLATFORM POSITIONS
+	#Basic addresses of platform array that will not change
+	#Get address of plaform array
+	la $t1, platOffset
+	li $t0, 128
+	sw $t0, 0($t1)
+	li $t0, 896
+	sw $t0, 4($t1)
+	li $t0, 1920
+	sw $t0, 8($t1)
+	li $t0, 2944
+	sw $t0, 12($t1)
+	li $t0, 4008
+	sw $t0, 16($t1)
+	#INITIAL PLAYER POSITION
+	li $t0, 3900
+	sw $t0, playerOffset
+	
+	
 	#Get address of plaform array
 	la $t1, platOffset
 	#Index of platform array * 4
@@ -136,10 +170,7 @@ PlatformShiftDownLoop:
 NoShift:
 
 #Sleep
-Sleep:
-	li $v0, 32
-	li $a0, 150
-	syscall		
+jal Sleep	
 	
 #Check for UserInput
 KeyPress:
@@ -255,10 +286,37 @@ PaintPlayer:
 	addi $t3, $t3, 4
 	sw $t1, 0($t3)
 	
+	#Make it a cube
+	addi $t3, $t3, -128
+	sw $t1, 0($t3)
+	addi $t3, $t3, -4
+	sw $t1, 0($t3)
+	addi $t3, $t3, -4
+	sw $t1, 0($t3)
+	addi $t3, $t3, -128
+	sw $t1, 0($t3)
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	
 j GameRunning
 	
 
 Exit:
+	#Wait for user to hit s to start
+	lw $t8, 0xffff0000 
+	#Goes out of label if nothing is pressed
+	beq $t8, 0, Pause
+	#This point on means something is pressed, check what is pressed
+	lw $t2, 0xffff0004 
+	#Check if s is pressed
+	bne $t2, 0x73, Pause
+	j Start
+	#Sleep
+	Pause:
+		jal Sleep	
+	j Exit
 	li $v0, 10 # terminate the program gracefully
 	syscall	
 
@@ -315,6 +373,13 @@ CheckCollision:
 			addi $t2, $t2, 4
 			bne $t2, 20, CollisionLoop
 	DoneCheckCollision:
+	jr $ra
+	
+	
+Sleep:
+	li $v0, 32
+	li $a0, 150
+	syscall	
 	jr $ra
 	
 
