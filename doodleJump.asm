@@ -138,7 +138,7 @@ NoShift:
 #Sleep
 Sleep:
 	li $v0, 32
-	li $a0, 250
+	li $a0, 150
 	syscall		
 	
 #Check for UserInput
@@ -249,6 +249,11 @@ PaintPlayer:
 	lw $t2, playerOffset
 	add $t3, $t2, $t0
 	sw $t1, 0($t3)
+	#Player's base is 3 wide
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
 	
 j GameRunning
 	
@@ -268,10 +273,12 @@ GeneratePlatformPosition:
 	sll $a0, $a0, 2
 	jr $ra
 	
-#Check whether player collides with platform on the next step (check if the player is 1 above the  platform)
+#Check whether player collides with platform on the next step (check if the player is 1 on the  platform)
 CheckCollision:
 	#Get player's location
 	lw $t0, playerOffset
+	add $t9, $t0, 4
+	add $t8, $t9, 4
 	#Get address of plaform array
 	la $t1, platOffset
 	#Index of platform array * 4
@@ -290,13 +297,16 @@ CheckCollision:
 		PlatformCollision:
 			beq $t5, $t6, DoneCheckingPlatform
 			#Check if the platform (one above) collides
-			bne $t4, $t0, NotCollide
+			beq $t4, $t0, Collide
+			beq $t4, $t9, Collide
+			beq $t4, $t8, Collide
+			j NotCollide
+			Collide:
 			#This means it has collided
 			li $a3, 10 #Reset player jump counter
 			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
 			move $a2, $t2 #saves index of platform*4 
 			j DoneCheckCollision
-			
 			NotCollide:
 			addi $t5, $t5, 1
 			addi $t4, $t4, 4
