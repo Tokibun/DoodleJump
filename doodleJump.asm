@@ -72,7 +72,7 @@
 Start:
 	#Counter for how much a player can jump
 	li $a3, 10
-	li $a2, 0
+	li $a2, -1
 	#RandomlyGenerate all platform's positions (At the beginning of game)
 	#Go through all the platforms
 	#Get address of plaform array
@@ -112,8 +112,12 @@ GameRunning:
 		jal CheckCollision
 	DoneJump:
 	
+#Check if you lost
+lw $t0, playerOffset
+bgt $t0, 4092, Exit
+	
 #Move platforms down
-beq $a2, 0, NoShift
+beq $a2, -1, NoShift
 #Get address of plaform array
 la $t1, platOffset
 #Index of platform array * 4
@@ -181,8 +185,10 @@ CheckPlatforms:
 		blt $t4, 4068, NextPlatform		
 		
 		NewPlatform:
-			#New platform made, meaning platforms shifted by 1
-			li $a2, 0
+			#New platform made, see if it's the one that is needed, if it is $a2 can go back to -1
+			bne $a2, $t2, Next
+			li $a2, -1
+			Next:
 			#Generate random horizontal position
 			jal GeneratePlatformPosition
 			#Save to the address (the platform will be at top of display)
@@ -287,8 +293,8 @@ CheckCollision:
 			bne $t4, $t0, NotCollide
 			#This means it has collided
 			li $a3, 10 #Reset player jump counter
-			#Variable to shift platfoems down by 1
-			li $a2, 1
+			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
+			move $a2, $t2 #saves index of platform*4 
 			j DoneCheckCollision
 			
 			NotCollide:
