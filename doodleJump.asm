@@ -50,12 +50,12 @@
 	displayAddress:	.word	0x10008000
 	
 	#Platform Positions
-	platOffset: .word 128, 896, 1920, 2944, 3968
+	platOffset: .word 128, 896, 1920, 2944, 4008#3968
 	#Platform Characteristic
 	platLength: .word 8
 	
 	#Player Position
-	playerOffset: .word 4028
+	playerOffset: .word 3900 #4028
 	
 	#Game colors
 	skyColor: .word 0xDDFFFB #LightBlue-NearWhite
@@ -63,7 +63,7 @@
 	playerColor: .word 0x5CFFBE #Green
 	
 	
-	promptK: .asciiz "K entered\n "
+	promptA: .asciiz "Collision\n "
 	promptJ: .asciiz "J entered\n "
 	
 	
@@ -93,7 +93,7 @@ Start:
 		
 		addi $t2, $t2, 4
 		#Maximum index of platform array = #platform*4 - 4
-		bne $t2, 20, StartRandomPos
+		bne $t2, 16, StartRandomPos
 		
 		
 GameRunning:
@@ -122,6 +122,8 @@ GameRunning:
 		lw $t0, playerOffset
 		addi $t0, $t0, 128
 		sw $t0, playerOffset
+		#Falling down requires a check for platform collision
+		jal CheckCollision
 		j DoneJump
 	PlayerJumpUp:
 		lw $t0, playerOffset
@@ -129,6 +131,24 @@ GameRunning:
 		sw $t0, playerOffset
 	DoneJump:
 	
+#Move platforms down
+beq $a2, 0, NoShift
+#Get address of plaform array
+la $t1, platOffset
+#Index of platform array * 4
+li $t2, 0
+PlatformShiftDownLoop:
+	add $t4, $t1, $t2
+	#Acess element at that index
+	lw $t3, 0($t4)
+	#Move it down by a row
+	addi $t3, $t3, 128
+	sw $t3, 0($t4)
+	#Next element
+	addi $t2, $t2, 4
+	#Maximum index of platform array = #platform*4 - 4
+	bne $t2, 20, PlatformShiftDownLoop
+NoShift:
 
 #Sleep
 Sleep:
@@ -180,6 +200,8 @@ CheckPlatforms:
 		blt $t4, 4068, NextPlatform		
 		
 		NewPlatform:
+			#New platform made, meaning platforms shifted by 1
+			li $a2, 0
 			#Generate random horizontal position
 			jal GeneratePlatformPosition
 			#Save to the address (the platform will be at top of display)
@@ -259,10 +281,47 @@ GeneratePlatformPosition:
 	sll $a0, $a0, 2
 	jr $ra
 	
-
-
-
-
-
+#Check whether player collides with platform on the next step (check if the player is 1 above the  platform)
+CheckCollision:
+	#Get player's location
+	lw $t0, playerOffset
+	#Get address of plaform array
+	la $t1, platOffset
+	#Index of platform array * 4
+	li $t2, 0
+	#platform length
+	lw $t6, platLength
+	CollisionLoop:
+		#Get the address at the index
+		add $t3, $t1, $t2
+		#Acess element at that index
+		lw $t4, 0($t3)
+		#Move it back by a row
+		addi $t4, $t4, -128
+		#Counter for platform length
+		li $t5, 0
+		PlatformCollision:
+			beq $t5, $t6, DoneCheckingPlatform
+			#Check if the platform (one above) collides
+			bne $t4, $t0, NotCollide
+			#This means it has collided
+			li $a3, 0 #Reset player jump counter
+			#Variable to shift platfoems down by 1
+			li $a2, 1
+			j DoneCheckCollision
+			
+			NotCollide:
+			addi $t5, $t5, 1
+			addi $t4, $t4, 4
+			j PlatformCollision	
+		DoneCheckingPlatform:
+			addi $t2, $t2, 4
+			bne $t2, 20, CollisionLoop
+	DoneCheckCollision:
+	jr $ra
 	
+
+
+
+
 
