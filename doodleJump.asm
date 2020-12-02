@@ -101,13 +101,13 @@ Start:
 	#Basic addresses of platform array that will not change
 	#Get address of plaform array
 	la $t1, platOffset
-	li $t0, 384#128
+	li $t0, 640
 	sw $t0, 0($t1)
-	li $t0, 1152#896
+	li $t0, 1536
 	sw $t0, 4($t1)
-	li $t0, 2176#1920
+	li $t0, 2304
 	sw $t0, 8($t1)
-	li $t0, 3200#2944
+	li $t0, 3200
 	sw $t0, 12($t1)
 	li $t0, 4008
 	sw $t0, 16($t1)
