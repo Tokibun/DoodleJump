@@ -85,8 +85,8 @@ Launch:
 Start:
 	#Counter for how much a player can jump
 	li $a3, 10
-	#Register to save what platform the screen needs to scroll past
-	li $a2, -1
+	#Register to save what platform the screen needs to scroll past (base platform is at index 5 rn)
+	li $a2, 16
 	#RandomlyGenerate all platform's positions (At the beginning of game)
 	#Go through all the platforms
 	
@@ -150,8 +150,14 @@ GameRunning:
 lw $t0, playerOffset
 bgt $t0, 4092, Exit
 	
-#Move platforms down
-beq $a2, -1, NoShift
+#Move platforms down IF necessary
+CheckBasePlatform:
+	la $t0, platOffset
+	add $t1, $a2, $t0
+	#Access offset value at that index
+	lw $t2, 0($t1)
+	#Check if it is > 3964, if it is, don't need to shift. Otherwise, need to shift.
+	bgt $t2, 3964, NoShift
 #Get address of plaform array
 la $t1, platOffset
 #Index of platform array * 4
@@ -216,10 +222,6 @@ CheckPlatforms:
 		blt $t4, 4068, NextPlatform		
 		
 		NewPlatform:
-			#New platform made, see if it's the one that is needed, if it is $a2 can go back to -1
-			bne $a2, $t2, Next
-			li $a2, -1
-			Next:
 			#Generate random horizontal position
 			jal GeneratePlatformPosition
 			#Save to the address (the platform will be at top of display)
@@ -363,7 +365,7 @@ CheckCollision:
 			#This means it has collided
 			li $a3, 10 #Reset player jump counter
 			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
-			move $a2, $t2 #saves index of platform*4 
+			move $a2, $t2 #saves index of platform*4 (AS BASE PLATFORM- THE PLATFORM THAT SHOULD BE AT BOTTOM OF SCREEN) 
 			j DoneCheckCollision
 			NotCollide:
 			addi $t5, $t5, 1
