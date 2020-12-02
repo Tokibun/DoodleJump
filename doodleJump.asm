@@ -91,7 +91,7 @@ Launch:
 
 Start:
 	#Counter for how much a player can jump
-	li $a3, 10
+	li $a3, 8
 	#Register to save what platform the screen needs to scroll past (base platform is at index 5 rn)
 	li $a2, 16
 	#RandomlyGenerate all platform's positions (At the beginning of game)
@@ -138,8 +138,18 @@ Start:
 		
 		
 GameRunning:
-#Sleep
-jal Sleep	
+#Sleep - speed of game
+#When player's below 20 platforms, game is normal (150ms sleep)
+#When player's at 20 platforms, game speeds up. (100ms sleep)
+#When player's at 40 platform, game speeds up again  (50ms sleep)
+bgt $s1, 1, FastGame
+bgt $s1, 3, FastestGame
+jal Sleep
+FastGame:
+jal Sleep
+FastestGame:
+jal Sleep
+
 	beq $a3, 0, PlayerFallDown
 	PlayerJumpUp:
 		lw $t0, playerOffset
@@ -381,7 +391,7 @@ CheckCollision:
 			j NotCollide
 			Collide:
 			#This means it has collided
-			li $a3, 10 #Reset player jump counter
+			li $a3, 8 #Reset player jump counter
 			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
 			move $a2, $t2 #saves index of platform*4 (AS BASE PLATFORM- THE PLATFORM THAT SHOULD BE AT BOTTOM OF SCREEN) 
 			j DoneCheckCollision
@@ -398,7 +408,7 @@ CheckCollision:
 	
 Sleep:
 	li $v0, 32
-	li $a0, 150
+	li $a0, 50
 	syscall	
 	jr $ra
 	
