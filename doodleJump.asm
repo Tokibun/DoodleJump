@@ -55,10 +55,10 @@
 	playerOffset: .word 3900 #4028
 	
 	#Game colors
-	skyColor: .word 0xDDFFFB #LightBlue-NearWhite
-	platColor: .word 0xFFACF6 #Pink
+	skyColor: .word 0xBFF7FF#0xDDFFFB #LightBlue-NearWhite
+	platColor: .word 0xFFC0CB#0xFFACF6 #Pink
 	playerColor: .word 0x5CFFBE #Green
-	numberColor: .word 0xECEBDF
+	numberColor: .word 0x859de4#0xECEBDF
 	
 	#Information to draw the score number
 	numberPixel: .word 1,1,1, 1,0,1, 1,0,1, 1,0,1, 1,1,1,   
@@ -94,6 +94,8 @@ Start:
 	li $a3, 8
 	#Register to save what platform the screen needs to scroll past (base platform is at index 5 rn)
 	li $a2, 16
+	
+	li $s3, 0
 	#RandomlyGenerate all platform's positions (At the beginning of game)
 	#INITIAL PLATFORM POSITIONS
 	#Basic addresses of platform array that will not change
@@ -177,6 +179,8 @@ CheckBasePlatform:
 	lw $t2, 0($t1)
 	#Check if it is > 3964, if it is, don't need to shift. Otherwise, need to shift.
 	bgt $t2, 3964, NoShift
+	#Make sure it waits one tick
+	beq $s3, 0, OneMoreTick
 #Get address of plaform array
 la $t1, platOffset
 #Index of platform array * 4
@@ -192,6 +196,8 @@ PlatformShiftDownLoop:
 	addi $t2, $t2, 4
 	#Maximum index of platform array = #platform*4 - 4
 	bne $t2, 20, PlatformShiftDownLoop
+OneMoreTick:
+	li $s3, 1
 NoShift:
 
 	
@@ -379,7 +385,7 @@ CheckCollision:
 		#Acess element at that index
 		lw $t4, 0($t3)
 		#Move it back by a row
-		#addi $t4, $t4, -128
+		addi $t4, $t4, -128
 		#Counter for platform length
 		li $t5, 0
 		PlatformCollision:
@@ -394,6 +400,7 @@ CheckCollision:
 			li $a3, 8 #Reset player jump counter
 			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
 			move $a2, $t2 #saves index of platform*4 (AS BASE PLATFORM- THE PLATFORM THAT SHOULD BE AT BOTTOM OF SCREEN) 
+			li $s3, 0
 			j DoneCheckCollision
 			NotCollide:
 			addi $t5, $t5, 1
