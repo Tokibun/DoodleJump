@@ -34,15 +34,12 @@
 ##########
 # Display Notes
 # Pixel address offsets range from 0 - 4092
-# Platform horizontal position range offset 0-96 [generate value from 0-24] Then multiply by 4
+# Platform horizontal position range offset 0-88 [generate value from 0-22] Then multiply by 4
 # Platform offset positions are based of leftmost point of platform
 
 # Player offset position is bottom left of character
 
 ##Other Notes
-# Player's jumps are determined by counter that goes from 1-35. [Increase counter with each tick]
-# Move up Numbers: 1-10, 12, 14, 16
-# Move down Numbers: 20, 22, 24, 26-35
 
 .data
 	
@@ -61,9 +58,19 @@
 	skyColor: .word 0xDDFFFB #LightBlue-NearWhite
 	platColor: .word 0xFFACF6 #Pink
 	playerColor: .word 0x5CFFBE #Green
+	numberColor: .word 0xECEBDF
 	
-	
-	
+	#Information to draw the score number
+	numberPixel: .word 1,1,1, 1,0,1, 1,0,1, 1,0,1, 1,1,1,   
+	1,1,0, 0,1,0, 0,1,0, 0,1,0, 0,1,0,   
+	1,1,1, 0,0,1, 1,1,1, 1,0,0, 1,1,1,   
+	1,1,1, 0,0,1, 1,1,1, 0,0,1, 1,1,1,   
+	1,0,1, 1,0,1, 1,1,1, 0,0,1, 0,0,1,   
+	1,1,1, 1,0,0, 1,1,1, 0,0,1, 1,1,1   
+	1,1,1, 1,0,0, 1,1,1 1,0,1, 1,1,1,   
+	1,1,1, 1,0,1, 0,0,1, 0,0,1, 0,0,1,   
+	1,1,1, 1,0,1, 1,1,1, 1,0,1, 1,1,1,   
+	1,1,1, 1,0,1, 1,1,1, 0,0,1, 0,0,1
 .text	
 
 Launch:
@@ -88,8 +95,6 @@ Start:
 	#Register to save what platform the screen needs to scroll past (base platform is at index 5 rn)
 	li $a2, 16
 	#RandomlyGenerate all platform's positions (At the beginning of game)
-	#Go through all the platforms
-	
 	#INITIAL PLATFORM POSITIONS
 	#Basic addresses of platform array that will not change
 	#Get address of plaform array
@@ -107,7 +112,9 @@ Start:
 	#INITIAL PLAYER POSITION
 	li $t0, 3900
 	sw $t0, playerOffset
-	
+	#INITIAL 2 DIGIT SCORE  (s1s0)
+	li $s0, 0
+	li $s1, 0
 	
 	#Get address of plaform array
 	la $t1, platOffset
@@ -131,6 +138,8 @@ Start:
 		
 		
 GameRunning:
+#Sleep
+jal Sleep	
 	beq $a3, 0, PlayerFallDown
 	PlayerJumpUp:
 		lw $t0, playerOffset
@@ -175,8 +184,6 @@ PlatformShiftDownLoop:
 	bne $t2, 20, PlatformShiftDownLoop
 NoShift:
 
-#Sleep
-jal Sleep	
 	
 #Check for UserInput
 KeyPress:
@@ -224,6 +231,11 @@ CheckPlatforms:
 		NewPlatform:
 			#Generate random horizontal position
 			jal GeneratePlatformPosition
+			
+			#Increase the score
+			jal IncreaseScoreByOne
+			
+			
 			#Save to the address (the platform will be at top of display)
 			sw $a0, 0($t3)	
 		NextPlatform:
@@ -302,6 +314,12 @@ PaintPlayer:
 	addi $t3, $t3, 4
 	sw $t1, 0($t3)
 	
+move $t0, $s1
+li $t5, 0
+jal DrawNumber #Number to draw must be stored in t0, additional offset must be stored at
+move $t0, $s0
+li $t5, 12
+jal DrawNumber
 j GameRunning
 	
 
@@ -385,7 +403,61 @@ Sleep:
 	jr $ra
 	
 
+IncreaseScoreByOne:
+	#If first digit (s0) is less than 9.
+	blt $s0, 9, AddOne
+	#Otherwise, add to the 10s
+	li $s0, 0
+	addi $s1, $s1, 1
+	jr $ra
+	AddOne:
+		addi $s0, $s0, 1
+		jr $ra
 
 
-
+DrawNumber:
+	#Load information on how to draw number
+	la $t1, numberPixel
+	#Set to the correct index*4 of the array
+	mul $t0, $t0, 15	
+	mul $t0, $t0, 4
+	#Add it as offset to the array
+	add $t2, $t1, $t0
+	#Counter since it should go through 15 elements only
+	li $t9, 0
+	#Display Address to draw at
+	move $t8, $gp 
+	
+	#Add additional offset t5
+	add $t8, $t8, $t5
+	
+	#color
+	lw $t7, numberColor
+	#Count Row 
+	li $t6, 0
+	StartDrawingNumber:
+		#Stop once this loop has ran 15 times
+		beq $t9, 15, DoneDrawingNumber
+		#Get element at index
+		lw $t3, 0($t2)
+		beq $t3, 0, Hole
+		#Otherewise, draw something
+		sw $t7, ($t8)
+		Hole:
+		addi $t6, $t6, 1
+		#Add to display address accordingly. If it goes past 3 elements (new row), add 120, otherwise add 4 only
+		beq $t6, 3, newNumberRow
+		add $t8, $t8, 4
+		j Added
+		newNumberRow:
+			add $t8, $t8, 120
+			li $t6, 0
+		Added:
+		#At the end, add 4 to the offset.
+		addi $t2, $t2, 4
+		addi $t9, $t9, 1
+		
+		j StartDrawingNumber
+	DoneDrawingNumber:
+	jr $ra
 
