@@ -53,11 +53,13 @@
 	
 	#Player Position
 	playerOffset: .word 3900 #4028
+	playerTwoOffset: .word 3916
 	
 	#Game colors
 	skyColor: .word 0xBFF7FF#0xDDFFFB #LightBlue-NearWhite
 	platColor: .word 0xFFC0CB#0xFFACF6 #Pink
-	playerColor: .word 0x5CFFBE #Green
+	playerColor: .word 0x859de4 #Green
+	playerTwoColor: .word 0x5CFFBE
 	numberColor: .word 0x859de4#0xECEBDF
 	
 	#Information to draw the score number
@@ -90,8 +92,9 @@ Launch:
 	
 
 Start:
-	#Counter for how much a player can jump
+	#Counter for how much a player can jump (a3-p1) (s7-p2)
 	li $a3, 8
+	li $s7, 8
 	#Register to save what platform the screen needs to scroll past (base platform is at index 5 rn)
 	li $a2, 16
 	
@@ -114,6 +117,8 @@ Start:
 	#INITIAL PLAYER POSITION
 	li $t0, 3900
 	sw $t0, playerOffset
+	li $t0, 3916
+	sw $t0, playerTwoOffset
 	#INITIAL 2 DIGIT SCORE  (s1s0)
 	li $s0, 0
 	li $s1, 0
@@ -212,8 +217,28 @@ KeyPress:
 	beq $t2, 0x6a, PressedJ
 	#Check if k is pressed
 	beq $t2, 0x6b, PressedK
+	#Check if w is pressed
+	beq $t2, 0x77, PressedW
+	#Check if e is pressed
+	beq $t2, 0x65, PressedE
+	
+	
 	#Ignore if other key is pressed
 	j DoneKeyPress
+	
+#Player 2
+PressedW:
+	lw $t0, playerTwoOffset
+	addi $t0, $t0, -4
+	sw $t0, playerTwoOffset	
+	j DoneKeyPress
+PressedE:
+	lw $t0, playerTwoOffset
+	addi $t0, $t0, 4
+	sw $t0, playerTwoOffset	
+	j DoneKeyPress
+	
+#PLAYER 1	
 #Update players location if user pressed j
 PressedJ:
 	lw $t0, playerOffset
@@ -330,6 +355,31 @@ PaintPlayer:
 	addi $t3, $t3, 4
 	sw $t1, 0($t3)
 	
+	#Do the same thing for the second player
+	lw $t1, playerTwoColor
+	lw $t2, playerTwoOffset
+	add $t3, $t2, $t0
+	sw $t1, 0($t3)
+	#Player's base is 3 wide
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	
+	#Make it a cube
+	addi $t3, $t3, -128
+	sw $t1, 0($t3)
+	addi $t3, $t3, -4
+	sw $t1, 0($t3)
+	addi $t3, $t3, -4
+	sw $t1, 0($t3)
+	addi $t3, $t3, -128
+	sw $t1, 0($t3)
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	
 move $t0, $s1
 li $t5, 0
 jal DrawNumber #Number to draw must be stored in t0, additional offset must be stored at
@@ -371,8 +421,9 @@ GeneratePlatformPosition:
 CheckCollision:
 	#Get player's location
 	lw $t0, playerOffset
-	add $t9, $t0, 4
-	add $t8, $t9, 4
+	#add $t9, $t0, 4
+	#add $t8, $t9, 4
+	lw $t9, playerTwoOffset
 	#Get address of plaform array
 	la $t1, platOffset
 	#Index of platform array * 4
@@ -391,21 +442,40 @@ CheckCollision:
 		PlatformCollision:
 			beq $t5, $t6, DoneCheckingPlatform
 			#Check if the platform (one above) collides
-			beq $t4, $t0, Collide
-			beq $t4, $t9, Collide
-			beq $t4, $t8, Collide
+			beq $t4, $t0, P1Collide
+			addi $t0, $t0, 4
+			beq $t4, $t0, P1Collide
+			addi $t0, $t0, 4
+			beq $t4, $t0, P1Collide
+			addi $t0, $t0, -8
+			CheckP2:
+			beq $t4, $t0, P2Collide
+			addi $t4, $t4, 4
+			beq $t4, $t0, P2Collide
+			addi $t4, $t4, 4
+			beq $t4, $t0, P2Collide
+			addi $t4, $t4, -8
+			#beq $t4, $t9, P1Collide
+			#beq $t4, $t8, P1Collide
 			j NotCollide
-			Collide:
+			
+			P1Collide:
 			#This means it has collided
 			li $a3, 8 #Reset player jump counter
 			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
 			move $a2, $t2 #saves index of platform*4 (AS BASE PLATFORM- THE PLATFORM THAT SHOULD BE AT BOTTOM OF SCREEN) 
 			li $s3, 0
-			j DoneCheckCollision
+			j CheckP2
+			
+			P2Collide:
+			li $s7, 8 #Reset player two jump counter
+			move $s6, $t2 #save index of player two base platform.
+			
 			NotCollide:
 			addi $t5, $t5, 1
 			addi $t4, $t4, 4
 			j PlatformCollision	
+			
 		DoneCheckingPlatform:
 			addi $t2, $t2, 4
 			bne $t2, 20, CollisionLoop
