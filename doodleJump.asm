@@ -97,7 +97,6 @@ Start:
 	li $s7, 8
 	#Register to save what platform the screen needs to scroll past (base platform is at index 5 rn)
 	li $a2, 16
-	
 	li $s3, 0
 	#RandomlyGenerate all platform's positions (At the beginning of game)
 	#INITIAL PLATFORM POSITIONS
@@ -157,7 +156,8 @@ jal Sleep
 FastestGame:
 jal Sleep
 
-	beq $a3, 0, PlayerFallDown
+#Update P1 Y position
+beq $a3, 0, PlayerFallDown
 	PlayerJumpUp:
 		lw $t0, playerOffset
 		addi $t0, $t0, -128
@@ -171,9 +171,27 @@ jal Sleep
 		sw $t0, playerOffset
 		jal CheckCollision
 	DoneJump:
+#Update P2 Y position
+beq $s7, 0, Player2FallDown
+	Player2JumpUp:
+		lw $t0, playerTwoOffset
+		addi $t0, $t0, -128
+		sw $t0, playerTwoOffset
+		addi $s7, $s7 -1
+		j DoneJump2
+	Player2FallDown:
+		#Otherwise the player should be falling
+		lw $t0, playerTwoOffset
+		addi $t0, $t0, 128
+		sw $t0, playerTwoOffset
+		jal CheckP2Collision
+	DoneJump2:
+
 	
-#Check if you lost
+#Check if any player died
 lw $t0, playerOffset
+bgt $t0, 4092, Exit
+lw $t0, playerTwoOffset
 bgt $t0, 4092, Exit
 	
 #Move platforms down IF necessary
@@ -273,7 +291,7 @@ CheckPlatforms:
 			#Generate random horizontal position
 			jal GeneratePlatformPosition
 			
-			#Increase the score
+			#Increase the score of P1
 			jal IncreaseScoreByOne
 			
 			
@@ -329,62 +347,20 @@ PaintPlatforms:
 			#Maximum index of platform array = #platform*4 - 4
 			bne $t4, 20, PlatformsLoop
 #Draw player
-PaintPlayer:
-	lw $t0, displayAddress
 	lw $t1, playerColor
 	lw $t2, playerOffset
-	add $t3, $t2, $t0
-	sw $t1, 0($t3)
-	#Player's base is 3 wide
-	addi $t3, $t3, 4
-	sw $t1, 0($t3)
-	addi $t3, $t3, 4
-	sw $t1, 0($t3)
-	
-	#Make it a cube
-	addi $t3, $t3, -128
-	sw $t1, 0($t3)
-	addi $t3, $t3, -4
-	sw $t1, 0($t3)
-	addi $t3, $t3, -4
-	sw $t1, 0($t3)
-	addi $t3, $t3, -128
-	sw $t1, 0($t3)
-	addi $t3, $t3, 4
-	sw $t1, 0($t3)
-	addi $t3, $t3, 4
-	sw $t1, 0($t3)
+	jal PaintPlayer
 	
 	#Do the same thing for the second player
 	lw $t1, playerTwoColor
 	lw $t2, playerTwoOffset
-	add $t3, $t2, $t0
-	sw $t1, 0($t3)
-	#Player's base is 3 wide
-	addi $t3, $t3, 4
-	sw $t1, 0($t3)
-	addi $t3, $t3, 4
-	sw $t1, 0($t3)
-	
-	#Make it a cube
-	addi $t3, $t3, -128
-	sw $t1, 0($t3)
-	addi $t3, $t3, -4
-	sw $t1, 0($t3)
-	addi $t3, $t3, -4
-	sw $t1, 0($t3)
-	addi $t3, $t3, -128
-	sw $t1, 0($t3)
-	addi $t3, $t3, 4
-	sw $t1, 0($t3)
-	addi $t3, $t3, 4
-	sw $t1, 0($t3)
+	jal PaintPlayer
 	
 move $t0, $s1
 li $t5, 0
 jal DrawNumber #Number to draw must be stored in t0, additional offset must be stored at
 move $t0, $s0
-li $t5, 12
+li $t5, 16
 jal DrawNumber
 j GameRunning
 	
@@ -417,13 +393,10 @@ GeneratePlatformPosition:
 	sll $a0, $a0, 2
 	jr $ra
 	
-#Check whether player collides with platform on the next step (check if the player is 1 on the  platform)
+#Check whether player collides with platform on the next step 
 CheckCollision:
 	#Get player's location
 	lw $t0, playerOffset
-	#add $t9, $t0, 4
-	#add $t8, $t9, 4
-	lw $t9, playerTwoOffset
 	#Get address of plaform array
 	la $t1, platOffset
 	#Index of platform array * 4
@@ -442,35 +415,20 @@ CheckCollision:
 		PlatformCollision:
 			beq $t5, $t6, DoneCheckingPlatform
 			#Check if the platform (one above) collides
-			beq $t4, $t0, P1Collide
+			beq $t4, $t0, Collide
 			addi $t0, $t0, 4
-			beq $t4, $t0, P1Collide
+			beq $t4, $t0, Collide
 			addi $t0, $t0, 4
-			beq $t4, $t0, P1Collide
+			beq $t4, $t0, Collide
 			addi $t0, $t0, -8
-			CheckP2:
-			beq $t4, $t0, P2Collide
-			addi $t4, $t4, 4
-			beq $t4, $t0, P2Collide
-			addi $t4, $t4, 4
-			beq $t4, $t0, P2Collide
-			addi $t4, $t4, -8
-			#beq $t4, $t9, P1Collide
-			#beq $t4, $t8, P1Collide
 			j NotCollide
-			
-			P1Collide:
+			Collide:
 			#This means it has collided
-			li $a3, 8 #Reset player jump counter
+			li $a3, 8 #Reset player 1 jump counter
 			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
 			move $a2, $t2 #saves index of platform*4 (AS BASE PLATFORM- THE PLATFORM THAT SHOULD BE AT BOTTOM OF SCREEN) 
 			li $s3, 0
-			j CheckP2
-			
-			P2Collide:
-			li $s7, 8 #Reset player two jump counter
-			move $s6, $t2 #save index of player two base platform.
-			
+			j DoneCheckCollision
 			NotCollide:
 			addi $t5, $t5, 1
 			addi $t4, $t4, 4
@@ -482,6 +440,54 @@ CheckCollision:
 	DoneCheckCollision:
 	jr $ra
 	
+	
+CheckP2Collision:
+	#Get player's location
+	lw $t0, playerTwoOffset
+	#Get address of plaform array
+	la $t1, platOffset
+	#Index of platform array * 4
+	li $t2, 0
+	#platform length
+	lw $t6, platLength
+	CollisionLoop2:
+		#Get the address at the index
+		add $t3, $t1, $t2
+		#Acess element at that index
+		lw $t4, 0($t3)
+		#Move it back by a row
+		addi $t4, $t4, -128
+		#Counter for platform length
+		li $t5, 0
+		PlatformCollision2:
+			beq $t5, $t6, DoneCheckingPlatform2
+			#Check if the platform (one above) collides
+			beq $t4, $t0, Collide2
+			addi $t0, $t0, 4
+			beq $t4, $t0, Collide2
+			addi $t0, $t0, 4
+			beq $t4, $t0, Collide2
+			addi $t0, $t0, -8
+			j NotCollide2
+			Collide2:
+			#This means it has collided
+			li $s7, 8 #Reset player 1 jump counter
+			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
+			move $s3, $t2 #saves index of platform*4 (AS BASE PLATFORM- THE PLATFORM THAT SHOULD BE AT BOTTOM OF SCREEN) 
+			li $s3, 0
+			j DoneCheckCollision2
+			NotCollide2:
+			addi $t5, $t5, 1
+			addi $t4, $t4, 4
+			j PlatformCollision2	
+			
+		DoneCheckingPlatform2:
+			addi $t2, $t2, 4
+			bne $t2, 20, CollisionLoop2
+	DoneCheckCollision2:
+	jr $ra
+
+
 	
 Sleep:
 	li $v0, 32
@@ -548,3 +554,26 @@ DrawNumber:
 	DoneDrawingNumber:
 	jr $ra
 
+PaintPlayer:
+	add $t3, $t2, $gp
+	sw $t1, 0($t3)
+	#Player's base is 3 wide
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	
+	#Make it a cube
+	addi $t3, $t3, -128
+	sw $t1, 0($t3)
+	addi $t3, $t3, -4
+	sw $t1, 0($t3)
+	addi $t3, $t3, -4
+	sw $t1, 0($t3)
+	addi $t3, $t3, -128
+	sw $t1, 0($t3)
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	addi $t3, $t3, 4
+	sw $t1, 0($t3)
+	jr $ra
