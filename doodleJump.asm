@@ -97,7 +97,7 @@ Start:
 	li $s7, 8
 	#Register to save what platform the screen needs to scroll past (base platform is at index 5 rn)
 	li $a2, 16
-	li $s3, 0
+	li $s4, 16
 	#RandomlyGenerate all platform's positions (At the beginning of game)
 	#INITIAL PLATFORM POSITIONS
 	#Basic addresses of platform array that will not change
@@ -114,9 +114,9 @@ Start:
 	li $t0, 4008
 	sw $t0, 16($t1)
 	#INITIAL PLAYER POSITION
-	li $t0, 3900
+	li $t0, 3888
 	sw $t0, playerOffset
-	li $t0, 3916
+	li $t0, 3900
 	sw $t0, playerTwoOffset
 	#INITIAL 2 DIGIT SCORE  (s1s0)
 	li $s0, 0
@@ -193,13 +193,26 @@ lw $t0, playerOffset
 bgt $t0, 4092, Exit
 lw $t0, playerTwoOffset
 bgt $t0, 4092, Exit
-	
+
+#Determine which one is the base platform
+#Take the biggest base platform by checking value at index $a2(p1) and $s4(p2)
+la $t0, platOffset
+#P1's base
+add $t1, $a2, $t0
+lw $t1, 0($t1)
+#P2's base
+add $t2, $s4, $t0
+lw $t2, 0($t2)
+#Get the lowest value(highest platform) out of the two base platforms t2<t1 then keep t2
+blt $t2, $t1, CheckBasePlatform
+#Otherwise $t1>$t2 Move $t1 to $t2
+move $t2, $t1
 #Move platforms down IF necessary
 CheckBasePlatform:
-	la $t0, platOffset
-	add $t1, $a2, $t0
+	#la $t0, platOffset
+	#add $t1, $a2, $t0
 	#Access offset value at that index
-	lw $t2, 0($t1)
+	#lw $t2, 0($t1)
 	#Check if it is > 3964, if it is, don't need to shift. Otherwise, need to shift.
 	bgt $t2, 3964, NoShift
 	#Make sure it waits one tick
@@ -473,7 +486,7 @@ CheckP2Collision:
 			#This means it has collided
 			li $s7, 8 #Reset player 1 jump counter
 			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
-			move $s3, $t2 #saves index of platform*4 (AS BASE PLATFORM- THE PLATFORM THAT SHOULD BE AT BOTTOM OF SCREEN) 
+			move $s4, $t2 #saves index of platform*4 (AS BASE PLATFORM- THE PLATFORM THAT SHOULD BE AT BOTTOM OF SCREEN) 
 			li $s3, 0
 			j DoneCheckCollision2
 			NotCollide2:
