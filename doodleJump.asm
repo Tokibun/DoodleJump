@@ -6,9 +6,9 @@
 # Student: Michelle Kee, 1005254038
 #
 # Bitmap Display Configuration:
-# - Unit width in pixels: 16					     
-# - Unit height in pixels: 16
-# - Display width in pixels: 512
+# - Unit width in pixels: 16			8		     
+# - Unit height in pixels: 16  #8
+# - Display width in pixels: 512 #256
 # - Display height in pixels: 512
 # - Base Address for Display: 0x10008000 ($gp)
 #
@@ -73,7 +73,129 @@
 	1,1,1, 1,0,1, 0,0,1, 0,0,1, 0,0,1,   
 	1,1,1, 1,0,1, 1,1,1, 1,0,1, 1,1,1,   
 	1,1,1, 1,0,1, 1,1,1, 0,0,1, 0,0,1
+	#Information to draw letters
+	PixelA: .word 1,1,1, 1,0,1, 1,1,1, 1,0,1, 1,0,1
+	PixelD: .word 1,1,0, 1,0,1, 1,0,1, 1,0,1, 1,1,0 
+	PixelE: .word 1,1,1, 1,0,0, 1,1,0, 1,0,0, 1,1,1
+	PixelJ: .word 0,0,1, 0,0,1, 0,0,1, 1,0,1, 1,1,1
+	PixelL: .word 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,1,1
+	PixelM: .word 1,0,1, 1,1,1, 1,0,1, 1,0,1, 1,0,1
+	PixelO: .word 1,1,1, 1,0,1, 1,0,1, 1,0,1, 1,1,1
+	PixelP: .word 1,1,1, 1,0,1, 1,1,1, 1,0,0, 1,0,0
+	PixelR: .word 1,1,0, 1,0,1, 1,1,0, 1,0,1, 1,0,1
+	PixelS: .word 1,1,1, 1,0,0, 1,1,1, 0,0,1, 1,1,1
+	PixelT: .word 1,1,1, 0,1,0, 0,1,0, 0,1,0, 0,1,0
+	PixelU: .word 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,1,1
 .text	
+
+DrawStartScreen:
+	#lw $t0, displayAddress	# $t0 stores the base address for display
+	li $t0, 0
+	lw $t1, skyColor
+	PaintStartPixel:
+		#beq $t0, 0x10009000, DoneScreen #Pixel out of display
+		beq $t0, 8192, DoneStartcreen
+		add $t2, $t0, $gp
+		sw $t1, 0($t2)
+		addi $t0, $t0, 4 
+		j PaintStartPixel
+	DoneStartcreen:
+	
+	#DrawLetters
+	#Load information on how to draw number
+	la $t1, PixelD	
+	li $t0, 0
+	#Where to draw
+	li $t5, 12
+	jal DrawNumber
+	la $t1, PixelO
+	li $t0, 0
+	#Where to draw
+	li $t5, 28
+	jal DrawNumber
+	la $t1, PixelO
+	li $t0, 0
+	#Where to draw
+	li $t5, 44
+	jal DrawNumber
+	la $t1, PixelD
+	li $t0, 0
+	#Where to draw
+	li $t5, 60
+	jal DrawNumber
+	la $t1, PixelL
+	li $t0, 0
+	#Where to draw
+	li $t5, 76
+	jal DrawNumber
+	la $t1, PixelE
+	li $t0, 0
+	#Where to draw
+	li $t5, 92
+	jal DrawNumber	
+	la $t1, PixelJ
+	li $t0, 0
+	#Where to draw
+	li $t5, 792#664
+	jal DrawNumber
+	la $t1, PixelU
+	li $t0, 0
+	#Where to draw
+	li $t5, 808
+	jal DrawNumber
+	la $t1, PixelM
+	li $t0, 0
+	#Where to draw
+	li $t5, 824
+	jal DrawNumber
+	la $t1, PixelP
+	li $t0, 0
+	#Where to draw
+	li $t5, 840
+	jal DrawNumber
+	
+	la $t1, PixelS
+	li $t0, 0
+	#Where to draw
+	li $t5, 2456#1688
+	jal DrawNumber
+	
+	la $t1, PixelT
+	li $t0, 0
+	#Where to draw
+	li $t5, 2488
+	jal DrawNumber
+	la $t1, PixelO
+	li $t0, 0
+	#Where to draw
+	li $t5, 2504
+	jal DrawNumber
+	
+	la $t1, PixelS
+	li $t0, 0
+	#Where to draw
+	li $t5, 3224
+	jal DrawNumber
+	la $t1, PixelT
+	li $t0, 0
+	#Where to draw
+	li $t5, 3240
+	jal DrawNumber
+	la $t1, PixelA
+	li $t0, 0
+	#Where to draw
+	li $t5, 3256
+	jal DrawNumber
+	la $t1, PixelR
+	li $t0, 0
+	#Where to draw
+	li $t5, 3272
+	jal DrawNumber
+	la $t1, PixelT
+	li $t0, 0
+	#Where to draw
+	li $t5, 3288
+	jal DrawNumber
 
 Launch:
 	#Wait for user to hit s to start
@@ -93,8 +215,8 @@ Launch:
 
 Start:
 	#Counter for how much a player can jump (a3-p1) (s7-p2)
-	li $a3, 8
-	li $s7, 8
+	li $a3, 16
+	li $s7, 16
 	#Register to save what platform the screen needs to scroll past (base platform is at index 5 rn)
 	li $a2, 16
 	li $s4, 16
@@ -103,20 +225,20 @@ Start:
 	#Basic addresses of platform array that will not change
 	#Get address of plaform array
 	la $t1, platOffset
-	li $t0, 640
+	li $t0, 1280#640 
 	sw $t0, 0($t1)
-	li $t0, 1536
+	li $t0, 3072#1536
 	sw $t0, 4($t1)
-	li $t0, 2304
+	li $t0, 4608#2304
 	sw $t0, 8($t1)
-	li $t0, 3200
+	li $t0, 6400#3200
 	sw $t0, 12($t1)
-	li $t0, 4008
+	li $t0, 7996#4008
 	sw $t0, 16($t1)
 	#INITIAL PLAYER POSITION
-	li $t0, 3888
+	li $t0, 7868#3900
 	sw $t0, playerOffset
-	li $t0, 3900
+	li $t0, 7884#3888
 	sw $t0, playerTwoOffset
 	#INITIAL 2 DIGIT SCORE  (s1s0)
 	li $s0, 0
@@ -156,6 +278,51 @@ jal Sleep
 FastestGame:
 jal Sleep
 
+
+#Determine which one is the base platform
+#Take the biggest base platform by checking value at index $a2(p1) and $s4(p2)
+la $t0, platOffset
+#P1's base
+add $t1, $a2, $t0
+lw $t1, 0($t1)
+#P2's base
+add $t2, $s4, $t0
+lw $t2, 0($t2)
+#Get the lowest value(highest platform) out of the two base platforms t2<t1 then keep t2
+blt $t2, $t1, CheckBasePlatform
+#Otherwise $t1>$t2 Move $t1 to $t2
+move $t2, $t1
+#Move platforms down IF necessary
+CheckBasePlatform:
+	#la $t0, platOffset
+	#add $t1, $a2, $t0
+	#Access offset value at that index
+	#lw $t2, 0($t1)
+	#Check if it is > 3964, if it is, don't need to shift. Otherwise, need to shift. 
+	bgt $t2, 8064, NoShift #3964
+	#Make sure it waits one tick
+	beq $s3, 0, OneMoreTick
+#Get address of plaform array
+la $t1, platOffset
+#Index of platform array * 4
+li $t2, 0
+PlatformShiftDownLoop:
+	add $t4, $t1, $t2
+	#Acess element at that index
+	lw $t3, 0($t4)
+	#Move it down by a row
+	addi $t3, $t3, 128
+	sw $t3, 0($t4)
+	#Next element
+	addi $t2, $t2, 4
+	#Maximum index of platform array = #platform*4 - 4
+	bne $t2, 20, PlatformShiftDownLoop
+OneMoreTick:
+	li $s3, 1
+NoShift:
+
+
+
 #Update P1 Y position
 beq $a3, 0, PlayerFallDown
 	PlayerJumpUp:
@@ -190,51 +357,9 @@ beq $s7, 0, Player2FallDown
 	
 #Check if any player died
 lw $t0, playerOffset
-bgt $t0, 4092, Exit
+bgt $t0, 8188, GameEnd #4092
 lw $t0, playerTwoOffset
-bgt $t0, 4092, Exit
-
-#Determine which one is the base platform
-#Take the biggest base platform by checking value at index $a2(p1) and $s4(p2)
-la $t0, platOffset
-#P1's base
-add $t1, $a2, $t0
-lw $t1, 0($t1)
-#P2's base
-add $t2, $s4, $t0
-lw $t2, 0($t2)
-#Get the lowest value(highest platform) out of the two base platforms t2<t1 then keep t2
-blt $t2, $t1, CheckBasePlatform
-#Otherwise $t1>$t2 Move $t1 to $t2
-move $t2, $t1
-#Move platforms down IF necessary
-CheckBasePlatform:
-	#la $t0, platOffset
-	#add $t1, $a2, $t0
-	#Access offset value at that index
-	#lw $t2, 0($t1)
-	#Check if it is > 3964, if it is, don't need to shift. Otherwise, need to shift.
-	bgt $t2, 3964, NoShift
-	#Make sure it waits one tick
-	beq $s3, 0, OneMoreTick
-#Get address of plaform array
-la $t1, platOffset
-#Index of platform array * 4
-li $t2, 0
-PlatformShiftDownLoop:
-	add $t4, $t1, $t2
-	#Acess element at that index
-	lw $t3, 0($t4)
-	#Move it down by a row
-	addi $t3, $t3, 128
-	sw $t3, 0($t4)
-	#Next element
-	addi $t2, $t2, 4
-	#Maximum index of platform array = #platform*4 - 4
-	bne $t2, 20, PlatformShiftDownLoop
-OneMoreTick:
-	li $s3, 1
-NoShift:
+bgt $t0, 8188, GameEnd
 
 	
 #Check for UserInput
@@ -252,6 +377,10 @@ KeyPress:
 	beq $t2, 0x77, PressedW
 	#Check if e is pressed
 	beq $t2, 0x65, PressedE
+	
+	
+	#P1 Sheild: m
+	#P2 Shield: d
 	
 	
 	#Ignore if other key is pressed
@@ -297,8 +426,8 @@ CheckPlatforms:
 		#Access certain element of platOffset array
 		lw $t4, 0($t3)	
 		
-		#Check that the platform location is valid (The bottom rightmost position of the left point of platform is 4064)
-		blt $t4, 4068, NextPlatform		
+		#Check that the platform location is valid (The bottom rightmost position of the left point of platform is 4064) #4068
+		blt $t4, 8164, NextPlatform		
 		
 		NewPlatform:
 			#Generate random horizontal position
@@ -318,12 +447,15 @@ CheckPlatforms:
 
 #Painting the background of the screen (all pixels)
 PaintScreen:
-	lw $t0, displayAddress	# $t0 stores the base address for display
+	#lw $t0, displayAddress	# $t0 stores the base address for display
+	li $t0, 0
 	lw $t1, skyColor
 	PaintPixel:
-		beq $t0, 0x10009000, DoneScreen #Pixel out of display
-		sw $t1, 0($t0)
-		addi $t0, $t0, 4
+		#beq $t0, 0x10009000, DoneScreen #Pixel out of display
+		beq $t0, 8192, DoneScreen
+		add $t2, $t0, $gp
+		sw $t1, 0($t2)
+		addi $t0, $t0, 4 
 		j PaintPixel
 	DoneScreen:	
 
@@ -368,16 +500,20 @@ PaintPlatforms:
 	lw $t1, playerTwoColor
 	lw $t2, playerTwoOffset
 	jal PaintPlayer
-	
+
+#Load information on how to draw number
+la $t1, numberPixel	
 move $t0, $s1
 li $t5, 0
-jal DrawNumber #Number to draw must be stored in t0, additional offset must be stored at
+jal DrawNumber #Number to draw must be stored in t0, additional offset must be stored at $t5
+#Load information on how to draw number
+la $t1, numberPixel
 move $t0, $s0
 li $t5, 16
 jal DrawNumber
 j GameRunning
 	
-
+GameEnd:
 Exit:
 	#Wait for user to hit s to start
 	lw $t8, 0xffff0000 
@@ -437,7 +573,7 @@ CheckCollision:
 			j NotCollide
 			Collide:
 			#This means it has collided
-			li $a3, 8 #Reset player 1 jump counter
+			li $a3, 16 #Reset player 1 jump counter
 			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
 			move $a2, $t2 #saves index of platform*4 (AS BASE PLATFORM- THE PLATFORM THAT SHOULD BE AT BOTTOM OF SCREEN) 
 			li $s3, 0
@@ -484,7 +620,7 @@ CheckP2Collision:
 			j NotCollide2
 			Collide2:
 			#This means it has collided
-			li $s7, 8 #Reset player 1 jump counter
+			li $s7, 16 #Reset player 1 jump counter
 			#Variable to keep trakc of which platform has to be shoved to the bottom and respawned
 			move $s4, $t2 #saves index of platform*4 (AS BASE PLATFORM- THE PLATFORM THAT SHOULD BE AT BOTTOM OF SCREEN) 
 			li $s3, 0
@@ -523,7 +659,7 @@ IncreaseScoreByOne:
 
 DrawNumber:
 	#Load information on how to draw number
-	la $t1, numberPixel
+	#la $t1, numberPixel
 	#Set to the correct index*4 of the array
 	mul $t0, $t0, 15	
 	mul $t0, $t0, 4
@@ -566,13 +702,14 @@ DrawNumber:
 		j StartDrawingNumber
 	DoneDrawingNumber:
 	jr $ra
+	
 
 PaintPlayer:
 	add $t3, $t2, $gp
 	sw $t1, 0($t3)
 	#Player's base is 3 wide
 	addi $t3, $t3, 4
-	sw $t1, 0($t3)
+	#sw $t1, 0($t3)
 	addi $t3, $t3, 4
 	sw $t1, 0($t3)
 	
