@@ -455,6 +455,9 @@ KeyPress:
 	#Check if e is pressed
 	beq $t2, 0x65, PressedE
 	
+	#Check if p is pressed for pause
+	beq $t2, 0x70, PressedP
+	
 	
 	#P1 Sheild: m
 	#P2 Shield: d
@@ -462,7 +465,42 @@ KeyPress:
 	
 	#Ignore if other key is pressed
 	j DoneKeyPress
+PressedP:
+	#Print Paused
+	la $t1, PixelP
+	li $t0, 0
+	li $t5, 792
+	jal DrawNumber
+	la $t1, PixelA
+	li $t0, 0
+	li $t5, 808
+	jal DrawNumber
+	la $t1, PixelU
+	li $t0, 0
+	li $t5, 824
+	jal DrawNumber
+	la $t1, PixelS
+	li $t0, 0
+	li $t5, 840
+	jal DrawNumber
+	la $t1, PixelE
+	li $t0, 0
+	li $t5, 856
+	jal DrawNumber
 	
+	CheckUnpause:
+		lw $t8, 0xffff0000 
+		#Goes out of label if nothing is pressed
+		beq $t8, 0, KeepChecking
+		#This point on means something is pressed, check what is pressed
+		lw $t2, 0xffff0004 	
+		#Check if p is pressed for pause
+		beq $t2, 0x70, PressedPAgain
+	KeepChecking:
+		jal Sleep
+		j CheckUnpause
+	PressedPAgain:
+	j DoneKeyPress
 #Player 2
 PressedW:
 	lw $t0, playerTwoOffset
@@ -934,3 +972,4 @@ DynamicText:
 		syscall
 		move $s5, $a0
 		jr $ra
+		
