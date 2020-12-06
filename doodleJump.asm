@@ -6,9 +6,9 @@
 # Student: Michelle Kee, 1005254038
 #
 # Bitmap Display Configuration:
-# - Unit width in pixels: 16			8		     
-# - Unit height in pixels: 16  #8
-# - Display width in pixels: 512 #256
+# - Unit width in pixels: 8					     
+# - Unit height in pixels: 8
+# - Display width in pixels: 256
 # - Display height in pixels: 512
 # - Base Address for Display: 0x10008000 ($gp)
 #
@@ -18,9 +18,9 @@
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
-# 1. (fill in the feature, if any)
-# 2. (fill in the feature, if any)
-# 3. (fill in the feature, if any)
+# 1. Fancier Grahpics
+# 2. Two Doodles
+# 3. Dynamic On Screen Notifications
 # ... (add more if necessary)
 #
 # Link to video demonstration for final submission:
@@ -77,6 +77,7 @@
 	PixelA: .word 1,1,1, 1,0,1, 1,1,1, 1,0,1, 1,0,1
 	PixelD: .word 1,1,0, 1,0,1, 1,0,1, 1,0,1, 1,1,0 
 	PixelE: .word 1,1,1, 1,0,0, 1,1,0, 1,0,0, 1,1,1
+	PixelF: .word 1,1,1, 1,0,0, 1,1,0, 1,0,0, 1,0,0
 	PixelJ: .word 0,0,1, 0,0,1, 0,0,1, 1,0,1, 1,1,1
 	PixelL: .word 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,1,1
 	PixelM: .word 1,0,1, 1,1,1, 1,0,1, 1,0,1, 1,0,1
@@ -196,8 +197,81 @@ DrawStartScreen:
 	#Where to draw
 	li $t5, 3288
 	jal DrawNumber
+	
+	li $t9, 4952#4184  +768
+	li $t5, 6944
+	#Falling down when t8 is at 1
+	li $t8, 1
+	
 
 Launch:
+	#Repaint lower background
+	li $t0, 4096
+	lw $t1, skyColor
+	StartBackRepaint:
+		#beq $t0, 0x10009000, DoneScreen #Pixel out of display
+		beq $t0, 8192, DoneRepaint
+		add $t2, $t0, $gp
+		sw $t1, 0($t2)
+		addi $t0, $t0, 4 
+		j StartBackRepaint
+	DoneRepaint:
+	
+	beq $t9, 4952, startFall #4184
+	beq $t9, 5592, startUp #4824
+	j startAction
+	startUp:
+	li $t8, 0
+	j startAction
+	startFall:
+	li $t8, 1
+	startAction:
+		beq $t8, 1, falling
+		addi $t9, $t9, -128
+		addi $t5, $t5, -128
+		j out
+		falling:
+		addi $t9, $t9, 128
+		addi $t5, $t5, 128
+	out:
+	lw $t7, playerTwoColor
+	#Draw pixel
+	add $t2, $t9, $gp
+	sw $t7, 0($t2)
+	addi $t2, $t2, 8
+	sw $t7, 0($t2)
+	addi $t2, $t2, -128
+	sw $t7, 0($t2)
+	addi $t2, $t2, -4
+	sw $t7, 0($t2)
+	addi $t2, $t2, -4
+	sw $t7, 0($t2)
+	addi $t2, $t2, -128
+	sw $t7, 0($t2)
+	addi $t2, $t2, 4
+	sw $t7, 0($t2)
+	addi $t2, $t2, 4
+	sw $t7, 0($t2)
+	lw $t7, playerColor
+	#Another Jumping Player
+	add $t2, $t5, $gp
+	sw $t7, 0($t2)
+	addi $t2, $t2, 8
+	sw $t7, 0($t2)
+	addi $t2, $t2, -128
+	sw $t7, 0($t2)
+	addi $t2, $t2, -4
+	sw $t7, 0($t2)
+	addi $t2, $t2, -4
+	sw $t7, 0($t2)
+	addi $t2, $t2, -128
+	sw $t7, 0($t2)
+	addi $t2, $t2, 4
+	sw $t7, 0($t2)
+	addi $t2, $t2, 4
+	sw $t7, 0($t2)
+	#Redraw temporary doodle
+	
 	#Wait for user to hit s to start
 	lw $t8, 0xffff0000 
 	#Goes out of label if nothing is pressed
@@ -236,9 +310,9 @@ Start:
 	li $t0, 7996#4008
 	sw $t0, 16($t1)
 	#INITIAL PLAYER POSITION
-	li $t0, 7868#3900
+	li $t0, 7884#3900
 	sw $t0, playerOffset
-	li $t0, 7884#3888
+	li $t0, 7868#3888
 	sw $t0, playerTwoOffset
 	#INITIAL 2 DIGIT SCORE  (s1s0)
 	li $s0, 0
@@ -501,6 +575,10 @@ PaintPlatforms:
 	lw $t2, playerTwoOffset
 	jal PaintPlayer
 
+#Draw random encouragement
+PaintEncouragement:
+	
+
 #Load information on how to draw number
 la $t1, numberPixel	
 move $t0, $s1
@@ -514,6 +592,53 @@ jal DrawNumber
 j GameRunning
 	
 GameEnd:
+	#Paint end screen
+	la $t1, PixelS
+	li $t0, 0
+	li $t5, 2456
+	jal DrawNumber
+	la $t1, PixelT
+	li $t0, 0
+	li $t5, 2488
+	jal DrawNumber
+	la $t1, PixelO
+	li $t0, 0
+	li $t5, 2504
+	jal DrawNumber
+	la $t1, PixelS
+	li $t0, 0
+	li $t5, 3224
+	jal DrawNumber
+	la $t1, PixelT
+	li $t0, 0
+	li $t5, 3240
+	jal DrawNumber
+	la $t1, PixelA
+	li $t0, 0
+	li $t5, 3256
+	jal DrawNumber
+	la $t1, PixelR
+	li $t0, 0
+	li $t5, 3272
+	jal DrawNumber
+	la $t1, PixelT
+	li $t0, 0
+	li $t5, 3288
+	jal DrawNumber
+	
+	la $t1, PixelO
+	li $t0, 0
+	li $t5, 5800
+	jal DrawNumber
+	la $t1, PixelO
+	li $t0, 0
+	li $t5, 5816
+	jal DrawNumber
+	la $t1, PixelF
+	li $t0, 0
+	li $t5, 5832
+	jal DrawNumber
+	
 Exit:
 	#Wait for user to hit s to start
 	lw $t8, 0xffff0000 
