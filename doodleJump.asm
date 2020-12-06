@@ -78,6 +78,7 @@
 	PixelD: .word 1,1,0, 1,0,1, 1,0,1, 1,0,1, 1,1,0 
 	PixelE: .word 1,1,1, 1,0,0, 1,1,0, 1,0,0, 1,1,1
 	PixelF: .word 1,1,1, 1,0,0, 1,1,0, 1,0,0, 1,0,0
+	PixelG: .word 1,1,1, 1,0,0, 1,0,1, 1,0,1, 1,1,1
 	PixelJ: .word 0,0,1, 0,0,1, 0,0,1, 1,0,1, 1,1,1
 	PixelL: .word 1,0,0, 1,0,0, 1,0,0, 1,0,0, 1,1,1
 	PixelM: .word 1,0,1, 1,1,1, 1,0,1, 1,0,1, 1,0,1
@@ -87,6 +88,7 @@
 	PixelS: .word 1,1,1, 1,0,0, 1,1,1, 0,0,1, 1,1,1
 	PixelT: .word 1,1,1, 0,1,0, 0,1,0, 0,1,0, 0,1,0
 	PixelU: .word 1,0,1, 1,0,1, 1,0,1, 1,0,1, 1,1,1
+	PixelW: .word 1,0,1, 1,0,1, 1,0,1, 1,1,1, 1,0,1,
 .text	
 
 DrawStartScreen:
@@ -317,7 +319,8 @@ Start:
 	#INITIAL 2 DIGIT SCORE  (s1s0)
 	li $s0, 0
 	li $s1, 0
-	
+	#Initial encouragement phrase
+	li $s5, -1
 	#Get address of plaform array
 	la $t1, platOffset
 	#Index of platform array * 4
@@ -510,9 +513,11 @@ CheckPlatforms:
 			#Increase the score of P1
 			jal IncreaseScoreByOne
 			
-			
 			#Save to the address (the platform will be at top of display)
-			sw $a0, 0($t3)	
+			sw $a0, 0($t3)
+			
+			#Check if the score is mutiple of 5, if so create some encouraging words
+			jal DynamicText	
 		NextPlatform:
 			addi $t2, $t2, 4
 			#Maximum index of platform array = #platform*4 - 4
@@ -575,10 +580,73 @@ PaintPlatforms:
 	lw $t2, playerTwoOffset
 	jal PaintPlayer
 
+
 #Draw random encouragement
 PaintEncouragement:
-	
-
+	#Check that there is encouragmenet that needs to be printed
+	beq $s5, -1, NoEncouragement
+	addi $s6, $s6, 1
+	#goes away after 5 ticks
+	beq $s6, 5, end
+	beq $s5, 0, firstEncourage
+	beq $s5, 1, secondEncourage 
+	#Print third encouragement- WOW
+	#Paint end screen
+	la $t1, PixelW
+	li $t0, 0
+	li $t5, 76
+	jal DrawNumber
+	la $t1, PixelO
+	li $t0, 0
+	li $t5, 92
+	jal DrawNumber
+	la $t1, PixelW
+	li $t0, 0
+	li $t5, 108
+	jal DrawNumber
+	j NoEncouragement 
+	#GREAT
+	firstEncourage:
+	la $t1, PixelG
+	li $t0, 0
+	li $t5, 44
+	jal DrawNumber
+	la $t1, PixelR
+	li $t0, 0
+	li $t5, 60
+	jal DrawNumber
+	la $t1, PixelE
+	li $t0, 0
+	li $t5, 76
+	jal DrawNumber
+	la $t1, PixelA
+	li $t0, 0
+	li $t5, 92
+	jal DrawNumber
+	la $t1, PixelT
+	li $t0, 0
+	li $t5, 108
+	jal DrawNumber
+	j NoEncouragement 
+	#POG
+	secondEncourage:
+	la $t1, PixelP
+	li $t0, 0
+	li $t5, 76
+	jal DrawNumber
+	la $t1, PixelO
+	li $t0, 0
+	li $t5, 92
+	jal DrawNumber
+	la $t1, PixelG
+	li $t0, 0
+	li $t5, 108
+	jal DrawNumber
+	j NoEncouragement
+	end:
+		li $s5, -1
+		li $s6, 0
+NoEncouragement:
 #Load information on how to draw number
 la $t1, numberPixel	
 move $t0, $s1
@@ -852,3 +920,17 @@ PaintPlayer:
 	addi $t3, $t3, 4
 	sw $t1, 0($t3)
 	jr $ra
+
+DynamicText:
+	#Check if score is multiple of 5
+	beq $s0, 5, cont
+	jr $ra
+	cont:
+		#Save into $s5, randomly generated encouragement
+		#Generate number from 0-2
+		li $v0, 42
+		li $a0, 0
+		li $a1, 2
+		syscall
+		move $s5, $a0
+		jr $ra
