@@ -24,10 +24,12 @@
 # ... (add more if necessary)
 #
 # Link to video demonstration for final submission:
-# - (insert YouTube / MyMedia / other URL here). 
+# - https://www.youtube.com/watch?v=Yuf15uXhzv0&feature=youtu.be  (PART1: FEATURES)
+# - https://www.youtube.com/watch?v=-0Muf17LMeM&feature=youtu.be (PART2: IMPLEMENTATION DETAILS)
+# - https://www.youtube.com/watch?v=3zILNsKX8No&feature=youtu.be (PART3: DIFFICULTIES) 
 #
 # Any additional information that the TA needs to know:
-# - (write here, if any)
+# - 
 #
 #####################################################################
 
@@ -39,7 +41,6 @@
 
 # Player offset position is bottom left of character
 
-##Other Notes
 
 .data
 	
